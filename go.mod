@@ -49,7 +49,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require github.com/go-swagger/go-swagger v0.28.0
+require github.com/rzurga/go-swagger v0.28.0
 
 require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
