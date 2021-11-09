@@ -17,7 +17,9 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"net/url"
 	"sync"
 	"sync/atomic"
 
@@ -38,6 +40,7 @@ func NewPetstore() (http.Handler, error) {
 	api := untyped.NewAPI(spec)
 
 	api.RegisterOperation("get", "/pets", getAllPets)
+	api.RegisterOperation("get", "/google", google)
 	api.RegisterOperation("post", "/pets", createPet)
 	api.RegisterOperation("delete", "/pets/{id}", deletePet)
 	api.RegisterOperation("get", "/pets/{id}", getPetByID)
@@ -50,6 +53,26 @@ var getAllPets = runtime.OperationHandlerFunc(func(data interface{}) (interface{
 	fmt.Printf("%#v\n", data)
 	return pets, nil
 })
+
+var google = runtime.OperationHandlerFunc(func(data interface{}) (interface{}, error) {
+	fmt.Println("google")
+	fmt.Printf("%#v\n", data)
+	searchUrl := "https://www.google.com/search?q=" + url.QueryEscape(data.(map[string]interface{})["q"].(string))
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", searchUrl, nil)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded ")
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	sb := string(body)
+	return sb, err
+})
+
 var createPet = runtime.OperationHandlerFunc(func(data interface{}) (interface{}, error) {
 	fmt.Println("createPet")
 	fmt.Printf("%#v\n", data)
@@ -158,6 +181,38 @@ var swaggerJSON = `{
     "application/json"
   ],
   "paths": {
+		"/google": {
+      "get": {
+        "description": "Returns all pets from the system that the user has access to",
+        "operationId": "searchGoogle",
+        "produces": [
+          "application/html"
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Google query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "search response",
+            "schema": {
+              "type": "html"
+            }
+          },
+          "default": {
+            "description": "unexpected error",
+            "schema": {
+              "$ref": "#/definitions/errorModel"
+            }
+          }
+        }
+      }
+		},
     "/pets": {
       "get": {
         "description": "Returns all pets from the system that the user has access to",
@@ -314,6 +369,32 @@ var swaggerJSON = `{
           "format": "int64"
         },
         "name": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        }
+      }
+    },
+    "query": {
+      "required": [
+        "query"
+      ],
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        }
+      }
+    },
+    "html": {
+      "required": [
+        "text"
+      ],
+      "properties": {
+        "text": {
           "type": "string"
         },
         "tag": {
